@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
-import os, gi
+import os, glob, gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GdkPixbuf
 
 imagePath = "./original.jpg"
+samplePath = "/usr/tmp/sample.jpg"
+previewPath = "/usr/tmp/preview.jpg"
 
 class SignalsHandler:
     def onDeleteWindow(self, *args):
@@ -15,9 +17,9 @@ class SignalsHandler:
         model = combo.get_model()
         item = model[index][0]
         filename = model[index][1]
-        commandline = 'gm convert -hald-clut {} {} -resize 640 -quality 97 {}'.format(filename, 'sample.jpg', 'preview.jpg')
+        commandline = 'gm convert -hald-clut {} {} -resize 640 -quality 97 {}'.format(filename, samplePath, previewPath)
         os.system(commandline)
-        showImage('preview.jpg')
+        showImage(previewPath)
 
     def onButtonPressed(self, button):
         print('Saved!')
@@ -32,15 +34,20 @@ optionsCombo = builder.get_object("optionsCombo")
 optionsList = builder.get_object("optionsList")
 
 def showImage(filepath):
-    if (filepath != 'preview.jpg'):
-        commandline = 'gm convert {} -resize 640 -quality 97 sample.jpg'.format(filepath)
+    if (filepath != previewPath):
+        commandline = 'gm convert {} -resize 640 -quality 97 {}'.format(filepath, samplePath)
         os.system(commandline)
-        filepath = 'sample.jpg'
+        filepath = samplePath
     imagePixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(filepath, 640, 480)
     previewImage.set_from_pixbuf(imagePixbuf)
 
-optionsList.append(["Kodak", "kodak.png"])
-optionsList.append(["Fujifilm", "fujifilm.png"])
+filtersPath = glob.glob('./filters/*/*')
+for filePath in filtersPath:
+    groupName = filePath.split('/')[-2].replace('_', ' ')
+    fileName = filePath.split('/')[-1].split('.')[0].replace('_', ' ')
+    description = '{} - {}'.format(groupName, fileName).upper()
+    filePath = filePath.replace('(', '\(').replace(')', '\)')
+    optionsList.append([description, filePath])
 
 showImage(imagePath)
 
